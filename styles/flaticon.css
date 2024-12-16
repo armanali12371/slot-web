@@ -1,0 +1,25 @@
+
+[class^="flaticon-"]:before, [class*=" flaticon-"]:before,
+[class^="flaticon-"]:after, [class*=" flaticon-"]:after {   
+	font-family: Flaticon;
+        font-size: 20px;
+font-style: normal;
+margin-left: 0px;
+}.flaticon-bicycle:before {
+	content: "\e000";
+}
+.flaticon-car:before {
+	content: "\e001";
+}
+.flaticon-cup:before {
+	content: "\e002";
+}
+.flaticon-massage:before {
+	content: "\e003";
+}
+.flaticon-restaurant:before {
+	content: "\e004";
+}
+.flaticon-swimming:before {
+	content: "\e005";
+}
