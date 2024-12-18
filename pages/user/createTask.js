@@ -1,32 +1,26 @@
 import Layout from '../../components/Layout';
 import { useState, useEffect } from 'react';
-import { db, auth } from '../firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import Swal from 'sweetalert2';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/router';
+import axios from 'axios';
 
 const CreateTask = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('pending'); // Default status is "pending"
+  const [status, setStatus] = useState('open'); // Default status
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
   const router = useRouter();
 
-  // Detect authentication state changes
+  // Fetch token from localStorage
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserId(user.uid); // Set the userId when user is logged in
-      } else {
-        setUserId(null); // Clear userId when logged out
-        router.push('/login'); // Redirect to login if no user is logged in
-      }
-    });
-
-    return () => unsubscribe(); // Clean up the listener on component unmount
-  }, []);
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      router.push('/login'); // Redirect to login if no token is found
+    } else {
+      setToken(authToken);
+    }
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,16 +37,23 @@ const CreateTask = () => {
       return;
     }
 
+    const taskData = {
+      title,
+      description,
+      status,
+    };
+
     try {
-      await addDoc(collection(db, 'tasks'), {
-        title,
-        description,
-        status,
-        assignee: userId, // Task is assigned to the logged-in user
-        createdAt: Timestamp.fromDate(new Date()),
-        updatedAt: Timestamp.fromDate(new Date()),
-        createdBy: userId, // User creating the task
-      });
+      const response = await axios.post(
+        'http://159.89.169.237:3000/task/createTask',
+        taskData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       Swal.fire({
         title: 'Success!',
@@ -61,19 +62,19 @@ const CreateTask = () => {
         confirmButtonText: 'OK',
       });
 
-      // Reset the form fields
+      // Reset form fields
       setTitle('');
       setDescription('');
-      setStatus('pending');
-      setLoading(false);
+      setStatus('open');
     } catch (error) {
-      console.error('Error adding task: ', error);
+      console.error('Error creating task:', error.response?.data || error.message);
       Swal.fire({
         title: 'Error!',
         text: 'There was an error creating the task. Please try again.',
         icon: 'error',
-        confirmButtonText: 'Try Again',
+        confirmButtonText: 'OK',
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -109,7 +110,7 @@ const CreateTask = () => {
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <option value="pending">Pending</option>
+              <option value="open">Open</option>
               <option value="in-progress">In Progress</option>
               <option value="completed">Completed</option>
             </select>

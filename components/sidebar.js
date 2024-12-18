@@ -1,42 +1,43 @@
 import Link from "next/link";
-import { signOut } from "firebase/auth";
-import { auth } from "../pages/firebase";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
 
 const Sidebar = () => {
   const router = useRouter();
   const [role, setRole] = useState(null); // State to hold the user's role
-  const db = getFirestore();
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/admin/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+  const handleLogout = () => {
+    // Remove the token from localStorage
+    localStorage.removeItem("authToken");
+    router.push("/admin/login"); // Redirect to login page after logout
   };
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const checkUserRole = () => {
+      const token = localStorage.getItem("authToken");
+
+      if (!token) {
+        router.push("/admin/login"); // Redirect to login if no token found
+        return;
+      }
+
       try {
-        const user = auth.currentUser; // Check logged-in user
-        if (user) {
-          const userRef = doc(db, "users", user.uid); // Fetch user document
-          const userDoc = await getDoc(userRef);
-          if (userDoc.exists()) {
-            setRole(userDoc.data().role); // Set role from Firestore
-          }
+        // Decode the JWT token
+        const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode the payload
+
+        if (decodedToken?.role) {
+          setRole(decodedToken.role); // Set the role from the token
+        } else {
+          router.push("/admin/login"); // Redirect if the role is not found
         }
       } catch (error) {
-        console.error("Error fetching user role:", error);
+        console.error("Error decoding token", error);
+        router.push("/admin/login"); // Redirect if token decoding fails
       }
     };
 
-    fetchUserRole();
-  }, [db]);
+    checkUserRole();
+  }, [router]);
 
   return (
     <div className="side-bar-menu bg-gray-800 text-white h-screen flex flex-col p-4">
@@ -67,38 +68,36 @@ const Sidebar = () => {
                 Booking
               </Link>
             </li>
-
             <li className="mb-4">
               <Link href="/admin/create-task" className="hover:text-blue-400">
                 Task Management
               </Link>
             </li>
             <li className="mb-4">
-            <Link href="/admin/task" className="hover:text-blue-400">
-            View All Tasks
+              <Link href="/admin/task" className="hover:text-blue-400">
+                View All Tasks
               </Link>
-            
-          </li>
+            </li>
           </>
         )}
         {role === "user" && (
-          <>          <li className="mb-4">
-            <Link href="/user/profile-update" className="hover:text-blue-400">
-              Profile Update
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="/user/createTask" className="hover:text-blue-400">
-             Create Tasks
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="/user/tasks" className="hover:text-blue-400">
-             Tasks
-            </Link>
-          </li>
+          <>
+            <li className="mb-4">
+              <Link href="/user/profile-update" className="hover:text-blue-400">
+                Profile Update
+              </Link>
+            </li>
+            <li className="mb-4">
+              <Link href="/user/createTask" className="hover:text-blue-400">
+                Create Tasks
+              </Link>
+            </li>
+            <li className="mb-4">
+              <Link href="/user/tasks" className="hover:text-blue-400">
+                Tasks
+              </Link>
+            </li>
           </>
-
         )}
       </ul>
 

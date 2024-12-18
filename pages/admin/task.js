@@ -1,99 +1,94 @@
 import { useState, useEffect } from 'react';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, getDocs } from 'firebase/firestore'; // Firebase Firestore imports
-import app from '../firebase'; // Firebase config
-import Swal from 'sweetalert2';
+import { useRouter } from 'next/router';
 import Layout from '../../components/Layout'; // Layout component
+import Swal from 'sweetalert2';
+import { getTaskList } from '../../api'; // Import the getTaskList function from api.js
+
 export default function AdminTaskList() {
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
   const [tasks, setTasks] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-  // Fetch all users to resolve user names later (assignee and creator)
   useEffect(() => {
-    const fetchUsers = async () => {
-      const usersRef = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersRef);
-      const usersList = usersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(usersList);
-    };
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      // Redirect to login page if token is not found
+      router.push('/admin/login');
+    } else {
+      fetchTasks(token); // Fetch tasks if token is available
+    }
+  }, [router]);
 
-    fetchUsers();
-  }, [db]);
-
-  // Fetch tasks for the admin
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const tasksRef = collection(db, 'tasks');
-        const tasksSnapshot = await getDocs(tasksRef);
-        const tasksList = tasksSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setTasks(tasksList);
-      } catch (error) {
-        Swal.fire({
-          title: 'Error!',
-          text: 'There was an error fetching tasks. Please try again.',
-          icon: 'error',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, [db]);
-
-  // Resolve user names based on user ID
-  const getUserName = (userId) => {
-    const user = users.find((user) => user.id === userId);
-    return user ? user.name : 'Unknown';
+  const fetchTasks = async (token) => {
+    try {
+      const response = await getTaskList(token);
+      console.log(response)
+      setTasks(response.data.tasks); // Store tasks in state
+    } catch (error) {
+      setError('Error fetching tasks');
+      Swal.fire({
+        title: 'Error!',
+        text: 'There was an error fetching tasks. Please try again.',
+        icon: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-800">
+        <p className="text-lg font-semibold text-white">Loading tasks...</p>
+      </div>
+    );
+  }
 
   return (
     <Layout>
-    <div className="container task-mang">
-      <h2>All Tasks (Admin)</h2>
+      <div className="container task-mang">
+        <h2>All Tasks (Admin)</h2>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <table className="task-table">
-          <thead>
-            <tr>
-              <th>Task Title</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Created By</th>
-              <th>Created At</th>
-              <th>Updated At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((task) => (
-              <tr key={task.id}>
-                <td>{task.title}</td>
-                <td>{task.description}</td>
-                <td>{task.status}</td>
-                <td>{getUserName(task.assignee)}</td> {/* Display assignee name */}
-                <td>{getUserName(task.createdBy)}</td> {/* Display creator name */}
-                <td>{new Date(task.createdAt?.seconds * 1000).toLocaleString()}</td>
-                <td>{new Date(task.updatedAt?.seconds * 1000).toLocaleString()}</td>
+        {error && <p className="text-red-600">{error}</p>}
+
+        <div className="bg-white p-4 rounded shadow-md">
+          <table className="min-w-full table-auto">
+            <thead>
+              <tr>
+                <th className="p-2 text-left">Task Title</th>
+                <th className="p-2 text-left">Description</th>
+                <th className="p-2 text-left">Status</th>
+                <th className="p-2 text-left">Assigned To</th>
+                <th className="p-2 text-left">Created By</th>
+                <th className="p-2 text-left">Created At</th>
+                <th className="p-2 text-left">Updated At</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+            </thead>
+            <tbody>
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
+                  <tr key={task.id}>
+                  <td>{task.TaskTitle}</td>
+                    <td>{task.Description}</td>
+                    <td>{task.Status}</td>
+                    <td>{task.AssignedTo || 'N/A'}</td>
+                    <td>{task.CreatedBy || 'N/A'}</td>
+                    <td>{new Date(task.CreatedAt).toLocaleString()}</td>
+                    <td>{new Date(task.UpdatedAt).toLocaleString()}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="p-2 text-center text-gray-500">
+                    No tasks found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </Layout>
   );
 }

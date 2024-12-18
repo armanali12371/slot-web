@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs } from 'firebase/firestore'; // Correct imports
+import { useRouter } from 'next/router';
 import Swal from 'sweetalert2';
-import app from '../firebase'; // Firebase config
 import Layout from '../../components/Layout'; // Layout component
-import Link from 'next/link';
+import { createTask, getUserList } from '../../api'; // Import the createTask and getUserList functions
 
 export default function CreateTask() {
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  const router = useRouter();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -16,40 +13,53 @@ export default function CreateTask() {
   const [users, setUsers] = useState([]);
   const [status, setStatus] = useState('pending');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Fetch users when the component mounts
   useEffect(() => {
-    const fetchUsers = async () => {
-      const usersRef = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersRef);
-      const usersList = usersSnapshot.docs
-        .filter((doc) => doc.data().role === 'user') // Filter only users with 'user' role
-        .map((doc) => ({ id: doc.id, ...doc.data() }));
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      router.push('/admin/login');
+    } else {
+      fetchUsers(token); // Fetch users when token is available
+    }
+  }, [router]);
 
-      setUsers(usersList);
-    };
-
-    fetchUsers();
-  }, [db]);
+  const fetchUsers = async (token) => {
+    try {
+      const response = await getUserList(token); // Use getUserList API to fetch users
+      setUsers(response.data.users); // Assuming response contains user data
+    } catch (error) {
+      setError('Error fetching users');
+      Swal.fire({
+        title: 'Error!',
+        text: 'There was an error fetching users. Please try again.',
+        icon: 'error',
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      setError('You are not authenticated.');
+      return;
+    }
 
     try {
       setLoading(true); // Show loading state
 
-      const userId = auth.currentUser?.uid;
-
-      // Create new task
-      await addDoc(collection(db, 'tasks'), {
+      // Prepare task data
+      const taskData = {
         title,
         description,
         status,
         assignee,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: userId,
-      });
+      };
+
+      // Call the API to create a task
+      await createTask(token, taskData);
 
       setLoading(false); // Hide loading state
 
@@ -65,8 +75,10 @@ export default function CreateTask() {
       setTitle('');
       setDescription('');
       setAssignee('');
+      setStatus('pending');
     } catch (error) {
       setLoading(false); // Hide loading state
+      setError('Error creating task');
 
       // Error Alert
       Swal.fire({
@@ -111,8 +123,8 @@ export default function CreateTask() {
             >
               <option value="">Select User</option>
               {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
+                <option key={user.UserID} value={user.UserID}>
+                  {user.Name}
                 </option>
               ))}
             </select>
@@ -136,9 +148,7 @@ export default function CreateTask() {
           </button>
         </form>
 
-        {/* <Link href="/admin/dashboard">
-          <button>Back to Dashboard</button>
-        </Link> */}
+        {error && <p className="text-red-600">{error}</p>}
       </div>
     </Layout>
   );

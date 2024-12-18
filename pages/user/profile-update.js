@@ -15,14 +15,16 @@ export default function ProfileUpdate() {
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureURL, setProfilePictureURL] = useState('');
   const [success, setSuccess] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null); // Store userId when authenticated
+  const [pictureLoading, setPictureLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   // Listen to auth state and fetch user data
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setUserId(user.uid); // Save the user ID
+        setUserId(user.uid);
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
@@ -33,14 +35,27 @@ export default function ProfileUpdate() {
           setProfilePictureURL(userData.profilePictureURL || '');
         }
       }
-      setLoading(false); // Stop loading after auth state resolves
+      setLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, [auth, db]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    setSuccess('');
+
+    // Validate inputs
+    if (!name.trim()) {
+      setErrorMessage('Name cannot be empty.');
+      return;
+    }
+
+    if (age <= 0 || age > 120) {
+      setErrorMessage('Enter a valid age between 1 and 120.');
+      return;
+    }
 
     try {
       const userRef = doc(db, 'users', userId);
@@ -49,9 +64,11 @@ export default function ProfileUpdate() {
 
       // Upload new profile picture if selected
       if (profilePicture) {
+        setPictureLoading(true);
         const storageRef = ref(storage, `profilePictures/${userId}`);
         await uploadBytes(storageRef, profilePicture);
         updatedProfilePictureURL = await getDownloadURL(storageRef);
+        setPictureLoading(false);
       }
 
       // Update user data in Firestore
@@ -65,6 +82,7 @@ export default function ProfileUpdate() {
       setProfilePictureURL(updatedProfilePictureURL);
     } catch (error) {
       console.error('Error updating profile:', error.message);
+      setErrorMessage('Failed to update profile. Please try again.');
     }
   };
 
@@ -77,6 +95,7 @@ export default function ProfileUpdate() {
       <div style={styles.container}>
         <h2 style={styles.title}>Update Profile</h2>
         {success && <p style={styles.success}>{success}</p>}
+        {errorMessage && <p style={styles.error}>{errorMessage}</p>}
         <form onSubmit={handleUpdate} style={styles.form}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Name:</label>
@@ -106,7 +125,17 @@ export default function ProfileUpdate() {
               onChange={(e) => setProfilePicture(e.target.files[0])}
               style={styles.fileInput}
             />
-            {profilePictureURL && (
+            {profilePicture && (
+              <div style={styles.imagePreview}>
+                <p>New Profile Picture Preview:</p>
+                <img
+                  src={URL.createObjectURL(profilePicture)}
+                  alt="Preview"
+                  style={styles.profileImage}
+                />
+              </div>
+            )}
+            {profilePictureURL && !profilePicture && (
               <div style={styles.imageContainer}>
                 <p>Current Profile Picture:</p>
                 <img
@@ -117,6 +146,7 @@ export default function ProfileUpdate() {
               </div>
             )}
           </div>
+          {pictureLoading && <p>Uploading picture...</p>}
           <button type="submit" style={styles.button}>
             Update Profile
           </button>
@@ -145,6 +175,11 @@ const styles = {
   },
   success: {
     color: 'green',
+    textAlign: 'center',
+    marginBottom: '15px',
+  },
+  error: {
+    color: 'red',
     textAlign: 'center',
     marginBottom: '15px',
   },
@@ -182,10 +217,11 @@ const styles = {
     fontWeight: 'bold',
     transition: 'background-color 0.3s ease',
   },
-  buttonHover: {
-    backgroundColor: '#0056b3',
-  },
   imageContainer: {
+    textAlign: 'center',
+    marginTop: '10px',
+  },
+  imagePreview: {
     textAlign: 'center',
     marginTop: '10px',
   },

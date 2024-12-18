@@ -29,14 +29,14 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      // Correct reference to the users collection in Firestore
+    
     //   console.log(usersList)
-      const usersCollectionRef = collection(db, "bookings"); // Make sure "users" is the correct collection name
+      const usersCollectionRef = collection(db, "bookings"); 
       
       const usersSnapshot = await getDocs(usersCollectionRef);
       const usersList = usersSnapshot.docs.map((doc) => doc.data());
       
-      setUsers(usersList); // Store users in state
+      setUsers(usersList);
     } catch (error) {
       console.error("Error fetching users: ", error);
     }

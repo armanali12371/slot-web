@@ -1,46 +1,39 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, getAuth } from "firebase/auth";
-import { auth ,app} from "../firebase";
 import Layout from "../../components/Layout";
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const router = useRouter();
-  const auth = getAuth(app);
-  const db = getFirestore(app);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const user = auth.currentUser;
+    const checkAdmin = () => {
+      const token = localStorage.getItem("authToken");
 
-      if (user) {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && userSnap.data().role !== 'admin') {
-          router.push('/'); // Redirect if not admin
+      if (!token) {
+        router.push("/admin/login"); // Redirect to login if no token found
+        return;
+      }
+
+      try {
+        // Decode token to get user role (assuming token contains role)
+        const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT token payload
+
+        if (decodedToken?.role !== "admin") {
+          router.push("/"); // Redirect if not admin
+        } else {
+          // Set user info if admin
+          setUser(decodedToken);
+          setLoading(false);
         }
-      } else {
-        router.push('/admin/login');
+      } catch (error) {
+        console.error("Invalid token", error);
+        router.push("/admin/login"); // Invalid token, redirect to login
       }
     };
 
     checkAdmin();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        setLoading(false);
-      } else {
-        router.push("/admin/login"); // Redirect to login if not authenticated
-      }
-    });
-
-    return () => unsubscribe(); // Clean up subscription on unmount
   }, [router]);
 
   if (loading) {
