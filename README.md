@@ -1,40 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Task Management System
 
-## Getting Started
+This is a task management system built using **Next.js** and **Firebase**. The application allows users to log in, view their assigned tasks, and update task statuses. It also provides a clean and intuitive user interface for managing tasks effectively.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Authentication**:
+  - User login and logout using Firebase Authentication.
+  - Tasks are filtered based on the logged-in user's ID.
+
+- **Task Management**:
+  - Fetch tasks from Firestore, assigned specifically to the authenticated user.
+  - View task details such as title, description, status, creation date, and last updated date.
+  - Update task statuses dynamically (e.g., mark as "In Progress" or "Completed").
+
+- **SweetAlert Integration**:
+  - Visual feedback for successful or failed operations.
+
+## Technologies Used
+
+### Frontend
+- [Next.js](https://nextjs.org/): A React framework for server-side rendering and static site generation.
+- [React](https://reactjs.org/): For building interactive user interfaces.
+- [SweetAlert2](https://sweetalert2.github.io/): For modern and customizable alert dialogs.
+
+### Backend
+- [Firebase Firestore](https://firebase.google.com/products/firestore): For real-time database storage.
+- [Firebase Authentication](https://firebase.google.com/products/auth): For secure user authentication.
+
+## Prerequisites
+
+- **Node.js** (>= 18.8.0)
+- **Firebase Project** set up with Firestore and Authentication enabled.
+
+## Setup Instructions
+
+1. **Clone the Repository**:
+   ```bash
+   git clone <repository-url>
+   cd <repository-folder>
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure Firebase**:
+   - Create a `firebase.js` file in the `pages/` directory.
+   - Add your Firebase configuration:
+     ```javascript
+     import { initializeApp } from 'firebase/app';
+     import { getAuth } from 'firebase/auth';
+     import { getFirestore } from 'firebase/firestore';
+
+     const firebaseConfig = {
+       apiKey: 'YOUR_API_KEY',
+       authDomain: 'YOUR_AUTH_DOMAIN',
+       projectId: 'YOUR_PROJECT_ID',
+       storageBucket: 'YOUR_STORAGE_BUCKET',
+       messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+       appId: 'YOUR_APP_ID',
+     };
+
+     const app = initializeApp(firebaseConfig);
+
+     export const auth = getAuth(app);
+     export const db = getFirestore(app);
+     ```
+
+4. **Run the Application**:
+   ```bash
+   npm run dev
+   ```
+   The application will run on `http://localhost:3000/`.
+
+## Project Structure
+
+```
+|-- pages/
+|   |-- tasks.js       # Main task management component
+|   |-- firebase.js    # Firebase configuration
+|-- components/
+|   |-- Layout.js      # Layout component for consistent page styling
+|-- public/            # Public assets
+|-- styles/            # CSS styling files
+|-- README.md          # Project documentation
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How to Use
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+1. **Login**: Log in to the application with your Firebase-authenticated credentials.
+2. **View Tasks**: Once logged in, view your assigned tasks in a table format.
+3. **Update Tasks**:
+   - Use the action buttons to change the status of tasks.
+   - Statuses include "Pending," "In Progress," and "Completed."
+4. **Alerts**: Get real-time feedback through SweetAlert2 notifications.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## Deployment
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+To deploy the application to a production environment:
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Build the project:
+   ```bash
+   npm run build
+   ```
+2. Start the production server:
+   ```bash
+   npm start
+   ```
 
-## Learn More
+Alternatively, you can deploy the application to platforms like [Vercel](https://vercel.com/) or [Netlify](https://www.netlify.com/).
 
-To learn more about Next.js, take a look at the following resources:
+## Troubleshooting
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+### Common Issues
+- **Invalid Firebase Config**: Double-check your Firebase configuration in `firebase.js`.
+- **Permission Errors**: Ensure that Firestore rules allow read/write access for authenticated users.
+- **Authentication State**: Ensure Firebase Authentication is properly set up in your Firebase console.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Acknowledgments
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [SweetAlert2 Documentation](https://sweetalert2.github.io/)
+
+---
+
+Feel free to contribute or report issues to improve this project!
