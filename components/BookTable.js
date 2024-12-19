@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { db } from "../pages/firebase"; // Import Firebase config
+import { db } from "../components/firebase"; // Import Firebase config
 import { collection, addDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
 

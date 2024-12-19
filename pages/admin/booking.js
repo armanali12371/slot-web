@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../firebase";  // Import auth and db
+import { auth, db } from "../../components/firebase";  // Import auth and db
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../../components/Layout";  // Your Layout component
 

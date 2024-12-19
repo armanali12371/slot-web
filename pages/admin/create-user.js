@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-import app from '../firebase'; // Firebase config file
+import {app} from '../../components/firebase'; // Firebase config file
 import Layout from "../../components/Layout";  // Your Layout component
 import { useEffect} from "react";
 import { createUser } from '../../api';

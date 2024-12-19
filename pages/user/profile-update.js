@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import {app} from '../firebase';
+import {app} from '../../components/firebase';
 import Layout from '../../components/Layout'; // Your Layout component
 
 export default function ProfileUpdate() {
