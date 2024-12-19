@@ -1,148 +1,86 @@
-import Layout from '../../components/Layout';
-import { useEffect, useState } from 'react';
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Layout from '../../components/Layout'; // Layout component
 import Swal from 'sweetalert2';
+import { getTaskList } from '../../api'; // Import the getTaskList function from api.js
 
-const Tasks = () => {
+export default function AdminTaskList() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
-
-  // Detect authentication state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserId(user.uid); // Set the userId when user is logged in
-      } else {
-        setUserId(null); // Clear userId when logged out
-      }
-    });
-
-    return () => unsubscribe(); // Clean up the listener on component unmount
-  }, []);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      if (userId) {
-        const taskQuery = query(
-          collection(db, 'tasks'),
-          where('assignee', '==', userId) // Only fetch tasks assigned to the logged-in user
-        );
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      // Redirect to login page if token is not found
+      router.push('/admin/login');
+    } else {
+      fetchTasks(token); // Fetch tasks if token is available
+    }
+  }, [router]);
 
-        try {
-          const taskSnapshot = await getDocs(taskQuery);
-          const tasksData = taskSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setTasks(tasksData); // Store the tasks in the state
-        } catch (error) {
-          console.error("Error fetching tasks: ", error);
-        }
-      }
-      setLoading(false); // Set loading state to false after the fetch is complete
-    };
-
-    fetchTasks(); // Call the fetch tasks function when userId changes (i.e., after login)
-  }, [userId]); // Run the fetch only when userId changes (on login/logout)
-
-  const updateTaskStatus = async (taskId, newStatus) => {
-    const taskRef = doc(db, 'tasks', taskId);
+  const fetchTasks = async (token) => {
     try {
-      await updateDoc(taskRef, { status: newStatus, updatedAt: new Date() });
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, status: newStatus, updatedAt: new Date() } : task
-        )
-      );
-
-      // Show success SweetAlert
-      Swal.fire({
-        title: 'Success!',
-        text: `Task status updated to ${newStatus}.`,
-        icon: 'success',
-        confirmButtonText: 'OK',
-      });
+      const response = await getTaskList(token);
+      console.log(response)
+      setTasks(response.data.tasks); // Store tasks in state
     } catch (error) {
-      console.error('Error updating task status: ', error);
-
-      // Show error SweetAlert
+      setError('Error fetching tasks');
       Swal.fire({
         title: 'Error!',
-        text: 'There was an error updating the task status.',
+        text: 'There was an error fetching tasks. Please try again.',
         icon: 'error',
-        confirmButtonText: 'Try Again',
       });
-    }
-  };
-
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'task-pending';
-      case 'in-progress':
-        return 'task-in-progress';
-      case 'completed':
-        return 'task-completed';
-      default:
-        return '';
+    } finally {
+      setLoading(false);
     }
   };
 
   if (loading) {
-    return <div>Loading...</div>; // Show loading message while fetching data
-  }
-
-  if (!userId) {
-    return <div>Please log in to view your tasks.</div>; // Prompt for login if no user
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-800">
+        <p className="text-lg font-semibold text-white">Loading tasks...</p>
+      </div>
+    );
   }
 
   return (
     <Layout>
-      <div className="task-mang">
-        <h1>Your Tasks</h1>
+      <div className="container task-mang">
+        <h2>All Tasks (Admin)</h2>
 
-        <table className="task-table">
-          <thead>
-            <tr>
-              <th>Task Title</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Created At</th>
-              <th>Updated At</th>
-              <th>Actions</th> {/* Added column for action buttons */}
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((task) => (
-              <tr key={task.id} className={getStatusClass(task.status)}>
-                <td>{task.title}</td>
-                <td>{task.description}</td>
-                <td>{task.status}</td>
-                <td>{new Date(task.createdAt?.seconds * 1000).toLocaleString()}</td>
-                <td>{new Date(task.updatedAt?.seconds * 1000).toLocaleString()}</td>
-                <td>
-                  {/* Added buttons to update status */}
-                  {task.status !== 'completed' && (
-                    <button className='not-completed-button' onClick={() => updateTaskStatus(task.id, 'completed')}>
-                      Mark as Completed
-                    </button>
-                  )}
-                  {task.status !== 'in-progress' && task.status !== 'completed' && (
-                    <button className='pending-button' onClick={() => updateTaskStatus(task.id, 'in-progress')}>
-                      Mark as In Progress
-                    </button>
-                  )}
-                </td>
+        {error && <p className="text-red-600">{error}</p>}
+
+        <div className="bg-white p-4 rounded shadow-md">
+          <table className="min-w-full table-auto">
+            <thead>
+              <tr>
+                <th className="p-2 text-left">Task Title</th>
+                <th className="p-2 text-left">Description</th>
+                <th className="p-2 text-left">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
+                  <tr key={task.id}>
+                  <td>{task.TaskTitle}</td>
+                    <td>{task.Description}</td>
+                    <td>{task.Status}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="p-2 text-center text-gray-500">
+                    No tasks found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </Layout>
   );
-};
-
-export default Tasks;
+}

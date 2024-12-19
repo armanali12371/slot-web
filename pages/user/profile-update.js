@@ -1,9 +1,9 @@
-import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useState, useEffect } from 'react';
-import Layout from '../../components/Layout';
 import app from '../firebase';
+import Layout from '../../components/Layout'; // Your Layout component
 
 export default function ProfileUpdate() {
   const auth = getAuth(app);
@@ -15,60 +15,50 @@ export default function ProfileUpdate() {
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureURL, setProfilePictureURL] = useState('');
   const [success, setSuccess] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [pictureLoading, setPictureLoading] = useState(false);
-  const [userId, setUserId] = useState(null);
 
-  // Listen to auth state and fetch user data
+  // Fetch existing user data when the component mounts
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUserId(user.uid);
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
+    const fetchUserData = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
 
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          setName(userData.name || '');
-          setAge(userData.age || '');
-          setProfilePictureURL(userData.profilePictureURL || '');
+        if (userId) {
+          const userRef = doc(db, 'users', userId);
+          const userSnap = await getDoc(userRef);
+
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            setName(userData.name || '');
+            setAge(userData.age || '');
+            setProfilePictureURL(userData.profilePictureURL || '');
+          }
         }
+      } catch (error) {
+        console.error('Error fetching user data:', error.message);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    fetchUserData();
   }, [auth, db]);
 
+  // Handle form submission to update profile
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccess('');
-
-    // Validate inputs
-    if (!name.trim()) {
-      setErrorMessage('Name cannot be empty.');
-      return;
-    }
-
-    if (age <= 0 || age > 120) {
-      setErrorMessage('Enter a valid age between 1 and 120.');
-      return;
-    }
 
     try {
+      const userId = auth.currentUser?.uid;
       const userRef = doc(db, 'users', userId);
 
       let updatedProfilePictureURL = profilePictureURL;
 
       // Upload new profile picture if selected
       if (profilePicture) {
-        setPictureLoading(true);
         const storageRef = ref(storage, `profilePictures/${userId}`);
         await uploadBytes(storageRef, profilePicture);
         updatedProfilePictureURL = await getDownloadURL(storageRef);
-        setPictureLoading(false);
       }
 
       // Update user data in Firestore
@@ -82,12 +72,12 @@ export default function ProfileUpdate() {
       setProfilePictureURL(updatedProfilePictureURL);
     } catch (error) {
       console.error('Error updating profile:', error.message);
-      setErrorMessage('Failed to update profile. Please try again.');
     }
   };
+  console.log("Updating document at path: users/", auth.currentUser?.uid);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>; // Show loading until user data is fetched
   }
 
   return (
@@ -95,7 +85,6 @@ export default function ProfileUpdate() {
       <div style={styles.container}>
         <h2 style={styles.title}>Update Profile</h2>
         {success && <p style={styles.success}>{success}</p>}
-        {errorMessage && <p style={styles.error}>{errorMessage}</p>}
         <form onSubmit={handleUpdate} style={styles.form}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Name:</label>
@@ -125,17 +114,7 @@ export default function ProfileUpdate() {
               onChange={(e) => setProfilePicture(e.target.files[0])}
               style={styles.fileInput}
             />
-            {profilePicture && (
-              <div style={styles.imagePreview}>
-                <p>New Profile Picture Preview:</p>
-                <img
-                  src={URL.createObjectURL(profilePicture)}
-                  alt="Preview"
-                  style={styles.profileImage}
-                />
-              </div>
-            )}
-            {profilePictureURL && !profilePicture && (
+            {profilePictureURL && (
               <div style={styles.imageContainer}>
                 <p>Current Profile Picture:</p>
                 <img
@@ -146,7 +125,6 @@ export default function ProfileUpdate() {
               </div>
             )}
           </div>
-          {pictureLoading && <p>Uploading picture...</p>}
           <button type="submit" style={styles.button}>
             Update Profile
           </button>
@@ -175,11 +153,6 @@ const styles = {
   },
   success: {
     color: 'green',
-    textAlign: 'center',
-    marginBottom: '15px',
-  },
-  error: {
-    color: 'red',
     textAlign: 'center',
     marginBottom: '15px',
   },
@@ -217,11 +190,10 @@ const styles = {
     fontWeight: 'bold',
     transition: 'background-color 0.3s ease',
   },
-  imageContainer: {
-    textAlign: 'center',
-    marginTop: '10px',
+  buttonHover: {
+    backgroundColor: '#0056b3',
   },
-  imagePreview: {
+  imageContainer: {
     textAlign: 'center',
     marginTop: '10px',
   },

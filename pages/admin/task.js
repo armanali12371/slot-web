@@ -59,8 +59,8 @@ export default function AdminTaskList() {
                 <th className="p-2 text-left">Task Title</th>
                 <th className="p-2 text-left">Description</th>
                 <th className="p-2 text-left">Status</th>
-                <th className="p-2 text-left">Assigned To</th>
-                <th className="p-2 text-left">Created By</th>
+                {/* <th className="p-2 text-left">Assigned To</th>
+                <th className="p-2 text-left">Created By</th> */}
                 <th className="p-2 text-left">Created At</th>
                 <th className="p-2 text-left">Updated At</th>
               </tr>
@@ -72,8 +72,8 @@ export default function AdminTaskList() {
                   <td>{task.TaskTitle}</td>
                     <td>{task.Description}</td>
                     <td>{task.Status}</td>
-                    <td>{task.AssignedTo || 'N/A'}</td>
-                    <td>{task.CreatedBy || 'N/A'}</td>
+                    {/* <td>{task.AssignedTo || 'N/A'}</td>
+                    <td>{task.CreatedBy || 'N/A'}</td> */}
                     <td>{new Date(task.CreatedAt).toLocaleString()}</td>
                     <td>{new Date(task.UpdatedAt).toLocaleString()}</td>
                   </tr>
