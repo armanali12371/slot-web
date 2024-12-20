@@ -59,6 +59,6 @@ jobs:
             cd slot/slot-web
 
             # Restart the application with PM2
-            pm2 restart nextjs || pm2 start npm --name "nextjs" -- run start
+            pm2 restart 4
             echo 'Next.js Deployment successful to AWS-SERVER'
           EOF
