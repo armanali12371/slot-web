@@ -1,34 +1,40 @@
-name: CI/CD Pipeline
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: WEB-CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+ 
+permissions:
+  contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    jobs1:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Creating TRACTOR Build
+          uses: actions/setup-node@v3
+          with:
+            SERVER_IP: ${{ secrets.SERVER_IP }}
+            SERVER_USER: ${{ secrets.SERVER_USER }}
+            SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
 
-      - name: Build on Server
-        run: |
-          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-          cd slot/slot-web
-          git pull origin main
-          npm install --legacy-peer-deps
-          npm run build || { echo "Build failed, aborting further steps."; exit 1; }
-          EOF
+            script: |
+              cd slot/slot-web
+              git stash
+              git pull
+              npm run build
+              echo 'Build successful '
+          
+        - name: Deploy TRACTOR Build
+          uses: appleboy/ssh-action@v0.1.8
+          with:
+            SERVER_IP: ${{ secrets.SERVER_IP }}
+            SERVER_USER: ${{ secrets.SERVER_USER }}
+            SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
 
-  deploy:
-    if: success()
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Restart App on Server
-        run: |
-          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-          cd slot/slot-web
-          pm2 start 2
-          EOF
+            script: |
+              pm2 restart 4
+              echo 'Deployment successful to AWS-SERVER'
