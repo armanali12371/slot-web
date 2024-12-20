@@ -17,9 +17,9 @@ jobs:
         - name: Creating TRACTOR Build
           uses: actions/setup-node@v3
           with:
-            SERVER_IP: ${{ secrets.SERVER_IP }}
-            SERVER_USER: ${{ secrets.SERVER_USER }}
-            SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+            host: ${{ secrets.SERVER_IP }}
+            username: ${{ secrets.SERVER_USER }}
+            key: ${{ secrets.SERVER_PASSWORD }}
 
             script: |
               cd slot/slot-web
@@ -31,9 +31,9 @@ jobs:
         - name: Deploy TRACTOR Build
           uses: appleboy/ssh-action@v0.1.8
           with:
-            SERVER_IP: ${{ secrets.SERVER_IP }}
-            SERVER_USER: ${{ secrets.SERVER_USER }}
-            SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+            host: ${{ secrets.SERVER_IP }}
+            username: ${{ secrets.SERVER_USER }}
+            key: ${{ secrets.SERVER_PASSWORD }}
 
             script: |
               pm2 restart 4
