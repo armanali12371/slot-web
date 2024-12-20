@@ -26,7 +26,6 @@ jobs:
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
           cd slot/slot-web
           git pull
-          npm install --legacy-peer-deps # Install dependencies
-          npm run build # Build the Next.js app
-          pm2 start 2 # Start or restart the app
+          npm run build 
+          pm2 start 4
         EOF
