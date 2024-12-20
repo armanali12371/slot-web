@@ -74,18 +74,6 @@ This is a task management system built using **Next.js** and **Firebase**. The a
    ```
    The application will run on `http://localhost:3000/`.
 
-## Project Structure
-
-```
-|-- pages/
-|   |-- tasks.js       # Main task management component
-|   |-- firebase.js    # Firebase configuration
-|-- components/
-|   |-- Layout.js      # Layout component for consistent page styling
-|-- public/            # Public assets
-|-- styles/            # CSS styling files
-|-- README.md          # Project documentation
-```
 
 ## How to Use
 
@@ -100,13 +88,7 @@ This is a task management system built using **Next.js** and **Firebase**. The a
 
 To deploy the application to a production environment:
 
-1. Build the project:
-   ```bash
-   npm run build
-   ```
-2. Start the production server:
-   ```bash
-   npm start
+1. CICD is setup on push command.
    ```
 
 Alternatively, you can deploy the application to platforms like [Vercel](https://vercel.com/) or [Netlify](https://www.netlify.com/).
