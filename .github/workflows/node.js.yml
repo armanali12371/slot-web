@@ -8,12 +8,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18 # Use the appropriate Node.js version
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Next.js app
+        run: npm run build
+
+  deploy:
+    needs: build # Ensures deployment only happens if the build succeeds
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Install SSH client
         run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Install Node.js on Server
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
+            # Install Node.js and npm if they are not already installed
+            curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            node -v # Confirm Node.js installation
+            npm -v  # Confirm npm installation
+          EOF
 
       - name: Deploy to Server
         env:
@@ -26,10 +56,12 @@ jobs:
             cd slot/slot-web
             # Pull the latest code from the repository
             git pull origin main
+            # Install dependencies
+            npm install --legacy-peer-deps
             # Build the Next.js app, and abort deployment if build fails
             npm run build || { echo "Build failed on server, aborting deployment."; exit 1; }
             # Restart the app with pm2, or start if not running
-            pm2 restart 4 || pm2 start 4
+            pm2 restart 2 || pm2 start 2
             # Optional: Ensure the PM2 process stays active after script completes
             pm2 save
           EOF
