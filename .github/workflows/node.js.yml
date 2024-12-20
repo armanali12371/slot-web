@@ -6,15 +6,25 @@ on:
       - main # Trigger deployment when changes are pushed to the 'main' branch
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install SSH client
-      run: sudo apt-get update && sudo apt-get install -y sshpass
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18 # Use the appropriate Node.js version
+
+  deploy:
+    needs: build # Ensures deployment only happens if the build succeeds
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
     - name: Deploy to Server
       env:
@@ -22,10 +32,9 @@ jobs:
         SERVER_USER: ${{ secrets.SERVER_USER }}
         SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
       run: |
-        # Set up SSH connection using sshpass
         sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
           cd slot/slot-web
           git pull
-          npm run build 
-          pm2 start 4
+          npm run build || { echo "Build failed on server, aborting deployment."; exit 1; }
+          pm2 restart 4 || pm2 start 4
         EOF
