@@ -82,7 +82,6 @@ This is a task management system built using **Next.js** and **Firebase**. The a
 3. **Update Tasks**:
    - Use the action buttons to change the status of tasks.
    - Statuses include "Pending," "In Progress," and "Completed."
-4. **Alerts**: Get real-time feedback through SweetAlert2 notifications.
 
 ## Deployment
 
