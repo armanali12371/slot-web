@@ -1,40 +1,32 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: WEB-CI/CD
+name: Deploy Next.js App
 
 on:
   push:
-    branches: [ "main" ]
- 
-permissions:
-  contents: read
+    branches:
+      - main # Trigger deployment when changes are pushed to the 'main' branch
 
 jobs:
-    jobs1:
-        runs-on: ubuntu-latest
-        steps:
-        - name: Creating TRACTOR Build
-          uses: actions/setup-node@v3
-          with:
-            host: ${{ secrets.SERVER_IP }}
-            username: ${{ secrets.SERVER_USER }}
-            key: ${{ secrets.SERVER_PASSWORD }}
+  deploy:
+    runs-on: ubuntu-latest
 
-            script: |
-              cd slot/slot-web
-              git stash
-              git pull
-              npm run build
-              echo 'Build successful '
-          
-        - name: Deploy TRACTOR Build
-          uses: appleboy/ssh-action@v0.1.8
-          with:
-            host: ${{ secrets.SERVER_IP }}
-            username: ${{ secrets.SERVER_USER }}
-            key: ${{ secrets.SERVER_PASSWORD }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-            script: |
-              pm2 restart 4
-              echo 'Deployment successful to AWS-SERVER'
+    - name: Install SSH client
+      run: sudo apt-get update && sudo apt-get install -y sshpass
+
+    - name: Deploy to Server
+      env:
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      run: |
+        # Set up SSH connection using sshpass
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
+          cd slot/slot-web
+          git pull
+          npm install --legacy-peer-deps # Install dependencies
+          npm run build # Build the Next.js app
+          pm2 start 2 # Start or restart the app
+        EOF
