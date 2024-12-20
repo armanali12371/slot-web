@@ -29,7 +29,7 @@ This is a task management system built using **Next.js** and **Firebase**. The a
 
 ## Prerequisites
 
-- **Node.js** (>= 18.8.0)
+- **Node.js** (>= 20.1.0)
 - **Firebase Project** set up with Firestore and Authentication enabled.
 
 ## Setup Instructions
