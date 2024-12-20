@@ -7,34 +7,28 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Install Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18 # Use the appropriate Node.js version
-
-  deploy:
     needs: build # Ensures deployment only happens if the build succeeds
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Deploy to Server
-      env:
-        SERVER_IP: ${{ secrets.SERVER_IP }}
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-      run: |
-        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
-          cd slot/slot-web
-          git pull
-          npm run build || { echo "Build failed on server, aborting deployment."; exit 1; }
-          pm2 restart 4 || pm2 start 4
-        EOF
+      - name: Deploy to Server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << EOF
+            # Navigate to the project directory
+            cd slot/slot-web
+            # Pull the latest code from the repository
+            git pull origin main
+            # Build the Next.js app, and abort deployment if build fails
+            npm run build || { echo "Build failed on server, aborting deployment."; exit 1; }
+            # Restart the app with pm2, or start if not running
+            pm2 restart 4 || pm2 start 4
+            # Optional: Ensure the PM2 process stays active after script completes
+            pm2 save
+          EOF
